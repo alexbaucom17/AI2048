@@ -1,17 +1,24 @@
 import numpy as np
 import math
 
+#TODO: Only allow new tiles to be added if move is legal
+#TODO: Add check for game complete (either board full or 2048 reached)
+
+
 #parameters
 TWO_FREQ = 0.75 #twos appear this fraction of the time and 4s appear 1-TWO_FREQ
 
 class game2048:
 
     def __init__(self, n):
-        #create a new game and initialze two tiles
+        #create a new game and initialize two tiles
         self.n = n
         self.game_state = np.zeros([n, n])
         self.generate_tile()
         self.generate_tile()
+
+    def get_tile(self, row, col):
+        return self.game_state[row][col]
 
     def get_empty_idx(self):
         # determine which tiles are empty and return list of linear indeces
@@ -97,8 +104,6 @@ class game2048:
                 self.game_state[idx_new[0], idx_new[1]] += val
                 blocked = True
 
-
-
     def check_move_type(self,idx,vec):
         #check to figure out what move is allowed for this value in this direction
         # 0 = blocked, 1 = free, 2 = combine
@@ -115,6 +120,7 @@ class game2048:
             return 2  # combine values
         else:
             return 0  # blocked with other tile
+
 
 if __name__ == '__main__':
     mygame = game2048(4)
