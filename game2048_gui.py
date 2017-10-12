@@ -57,6 +57,9 @@ class Board(tk.Frame):
     def perform_move(self, move_dir):
         self.game.swipe(move_dir)
         self.update_tiles()
+        game_over_state = self.game.check_for_game_over()
+        if game_over_state:
+            print(game_over_state)
 
     def update_tiles(self):
         for row in range(self.n):
@@ -69,7 +72,7 @@ class game2048GUI(tk.Frame):
 
         tk.Frame.__init__(self, master)
 
-        self.game = game2048.game2048(4)
+        self.game = game2048.game2048(10)
 
         self.board = Board(self, self.game)
         self.board.pack(side=tk.LEFT, padx=1, pady=1)

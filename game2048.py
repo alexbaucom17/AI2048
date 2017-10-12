@@ -1,9 +1,6 @@
 import numpy as np
 import math
 
-#TODO: Only allow new tiles to be added if move is legal
-#TODO: Add check for game complete (either board full or 2048 reached)
-
 
 #parameters
 TWO_FREQ = 0.75 #twos appear this fraction of the time and 4s appear 1-TWO_FREQ
@@ -57,6 +54,8 @@ class game2048:
         print(self.game_state)
 
     def swipe(self, swipe_direction):
+        old_state = np.copy(self.game_state)
+
         if swipe_direction == 'left':
             for i in range(self.n):
                 self.move_col(i, -1)
@@ -72,7 +71,36 @@ class game2048:
         else:
             raise ValueError('invalid direction')
 
-        self.generate_tile()
+        # only generate a new tile if the game state changed
+        if not np.array_equal(old_state,self.game_state):
+            self.generate_tile()
+
+    def check_for_game_over(self):
+        if np.any(self.game_state == 2048):
+            return "WIN"
+
+        if self.is_board_full() and self.check_for_valid_moves() == False:
+            return "LOSE"
+        else:
+            return None
+
+    def check_for_valid_moves(self):
+
+        valid_moves = False
+        old_state = np.copy(self.game_state)
+        for move in ['up','down','left','right']:
+            self.swipe(move)
+            if not np.array_equal(old_state, self.game_state):
+                valid_moves = True
+                self.game_state = np.copy(old_state)
+                break
+            else:
+                self.game_state = np.copy(old_state)
+
+        return valid_moves
+
+    def is_board_full(self):
+        return np.all(self.game_state != 0)
 
     def move_row(self, row, direction):
         for i in range(self.n):
