@@ -72,7 +72,7 @@ class game2048GUI(tk.Frame):
 
         tk.Frame.__init__(self, master)
 
-        self.game = game2048.game2048(10)
+        self.game = game2048.game2048(4)
 
         self.board = Board(self, self.game)
         self.board.pack(side=tk.LEFT, padx=1, pady=1)
