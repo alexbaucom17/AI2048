@@ -5,6 +5,10 @@ import math
 #parameters
 TWO_FREQ = 0.75 #twos appear this fraction of the time and 4s appear 1-TWO_FREQ
 
+#game score computed as MAX_SCORE_SCALE * max_val + SUM_SCORE_SCALE * board_sum
+MAX_SCORE_SCALE = 10
+SUM_SCORE_SCALE = 1
+
 class game2048:
 
     def __init__(self, n):
@@ -149,6 +153,18 @@ class game2048:
         else:
             return 0  # blocked with other tile
 
+    def get_state(self, flat=False):
+        if flat:
+            return self.game_state.reshape(-1)
+        else:
+            return self.game_state
+
+    def get_score(self):
+        max_val = np.max(np.max(self.game_state))
+        board_sum = np.sum(np.sum(self.game_state))
+        score = MAX_SCORE_SCALE * max_val + SUM_SCORE_SCALE * board_sum
+        return score
+
 
 if __name__ == '__main__':
     mygame = game2048(4)
@@ -158,3 +174,5 @@ if __name__ == '__main__':
     print('====================')
     mygame.swipe('right')
     mygame.show_state()
+    print(mygame.get_state(True))
+    print(mygame.get_score())

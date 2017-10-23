@@ -1,6 +1,12 @@
 import math
 import numpy as np
 
+def sigmoid_fn(x):
+    return 1.0 / (1.0 + math.exp(-x))
+
+def tanh_fn(x):
+    return 2*sigmoid_fn(2*x) - 1
+
 class Neuron:
 
     def __init__(self, weights, bias):
@@ -13,7 +19,8 @@ class Neuron:
         return self.activation_fn()
 
     def activation_fn(self):
-        return 1.0/(1.0+math.exp(-self.fwd_sum)) #sigmoid activation fn
+        #return sigmoid_fn(self.fwd_sum)
+        return tanh_fn(self.fwd_sum)
 
 
 class Layer:
