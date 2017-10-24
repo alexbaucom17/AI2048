@@ -2,6 +2,9 @@ import numpy as np
 import NeuralNetwork as nn
 import game2048
 import math
+import game2048_gui as gui
+import tkinter as tk
+import time
 
 SCALE = 2 #this allows dna values to randomly initialize in range [-1 1]
 
@@ -65,6 +68,7 @@ class Agent:
         else:
             self.game_size = int(self.game_size)
 
+
     def evaluate_network(self, input_state):
         if type(input_state) is list:
             input_state = np.array(input_state)
@@ -119,14 +123,26 @@ class Agent:
         self.old_state = game.get_state(flat=True)
         win = False
 
+        show_gui = True
+
+        if show_gui:
+            root = tk.Tk()
+            root.title("2048 Game")
+            GUI = gui.Board(root,game)
+            GUI.pack(side=tk.LEFT, padx=1, pady=1)
+
         while not game_over:
             flat_state = np.copy(game.get_state(flat=True))
             action = self.choose_action(flat_state)
             game.swipe(action)
             (game_over,win) = self.check_for_game_over(game, flat_state)
+            if show_gui:
+                GUI.update_tiles()
+                root.update()
+                time.sleep(0.1)
 
-        print(game.get_state(False))
-        print('======================')
+        if show_gui:
+            root.destroy()
         return game.get_score(),win
 
 

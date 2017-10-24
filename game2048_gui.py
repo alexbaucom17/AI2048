@@ -54,29 +54,37 @@ class Board(tk.Frame):
                 row_tiles.append(tile)
             self.tiles.append(row_tiles)
 
-    def perform_move(self, move_dir):
-        self.game.swipe(move_dir)
-        self.update_tiles()
-        game_over_state = self.game.check_for_game_over()
-        if game_over_state:
-            print(game_over_state)
-
     def update_tiles(self):
         for row in range(self.n):
             for col in range(self.n):
                 self.tiles[row][col].set_state(self.game.get_tile(row, col))
 
+
 class game2048GUI(tk.Frame):
 
-    def __init__(self, master):
+    def __init__(self, master,game):
+        tk.Frame.__init__(self, master)
+
+        self.game = game
+        self.board = Board(self, self.game)
+
+        self.board.pack(side=tk.LEFT, padx=1, pady=1)
+        self.focus_set()
+
+    def update_gui(self):
+        self.board.update_tiles()
+
+
+
+class HumanGUI(tk.Frame):
+    def __init__(self,master):
 
         tk.Frame.__init__(self, master)
 
         self.game = game2048.game2048(4)
+        self.board = HumanBoard(self, self.game)
 
-        self.board = Board(self, self.game)
         self.board.pack(side=tk.LEFT, padx=1, pady=1)
-
         self.focus_set()
 
         self.bind('<Left>', lambda event: self.board.perform_move("left"))
@@ -84,10 +92,22 @@ class game2048GUI(tk.Frame):
         self.bind('<Down>', lambda event: self.board.perform_move("down"))
         self.bind('<Right>', lambda event: self.board.perform_move("right"))
 
+class HumanBoard(Board):
+
+    def __init__(self,master,game):
+        Board.__init__(self,master,game)
+
+    def perform_move(self, move_dir):
+        self.game.swipe(move_dir)
+        self.update_tiles()
+        game_over_state = self.game.check_for_game_over()
+        if game_over_state:
+            print(game_over_state)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("2048 Game")
-    game2048GUI(root).pack()
+    HumanGUI(root).pack()
     root.mainloop()
 
