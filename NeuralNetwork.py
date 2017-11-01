@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import copy
 
 def sigmoid_fn(x):
     return 1.0 / (1.0 + math.exp(-x))
@@ -78,6 +79,10 @@ class NetworkStructure:
         self.n_layers = len(self.neurons_per_layer)
         self.n_outputs = self.neurons_per_layer[-1]
         self.n_inputs = self.neurons_per_layer[0]
+
+    def copy(self):
+        neurons_per_layer_copy = copy.deepcopy(self.neurons_per_layer)
+        return NetworkStructure(neurons_per_layer_copy)
 
     def get_number_of_weights_per_layer(self, n):
         if n == 0:
