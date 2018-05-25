@@ -5,8 +5,11 @@ import math
 import game2048_gui as gui
 import tkinter as tk
 import time
+import pickle
+import concurrent.futures
 
 SCALE = 1 #this allows dna values to randomly initialize in range [-1 1]
+MOVE_PAUSE_TIME = 0.1 #seconds to pause in between moves during replay
 
 
 def genome_crossover(genome1, genome2):
@@ -108,6 +111,8 @@ class Agent:
 
         self.network = self.genome.generate_network()
         self.game_size = math.sqrt(self.nn_structure.get_number_of_inputs())
+        self.game_random_state = np.random.RandomState(np.random.randint(10000)) #ensures that this random state is produced from a seeded stream
+        self.previous_game_random_seed = -1
         if self.game_size % 1 != 0:
             raise ValueError('Input layer must be a square number!')
         else:
@@ -170,20 +175,19 @@ class Agent:
         else:
             return False,False
 
-    def play_game(self):
-        game = game2048.game2048(self.game_size)
 
+    def play_game(self, gui_root=None):
+
+        self.previous_game_random_seed = self.game_random_state.get_state()
+        game = game2048.game2048(self.game_size,random_stream=self.game_random_state)
         game_over = False
-        self.stuck_counter = 0
-        self.old_state = game.get_state(flat=True)
         win = False
 
-        show_gui = False
+        self.stuck_counter = 0
+        self.old_state = game.get_state(flat=True)
 
-        if show_gui:
-            root = tk.Tk()
-            root.title("2048 Game")
-            GUI = gui.Board(root,game)
+        if gui_root:
+            GUI = gui.Board(gui_root,game)
             GUI.pack(side=tk.LEFT, padx=1, pady=1)
 
         while not game_over:
@@ -191,14 +195,24 @@ class Agent:
             action = self.choose_action(flat_state)
             game.swipe(action)
             (game_over,win) = self.check_for_game_over(game, flat_state)
-            if show_gui:
+            if gui_root:
                 GUI.update_tiles()
-                root.update()
-                time.sleep(0.1)
+                gui_root.update()
+                time.sleep(MOVE_PAUSE_TIME)
 
-        if show_gui:
-            root.destroy()
         return game.get_score(),win
+
+    def replay_previous_game(self, gui_root):
+        if self.previous_game_random_seed != -1:
+            old_seed = self.game_random_state.get_state()
+            self.game_random_state.set_state(self.previous_game_random_seed)
+            score,win = self.play_game(gui_root)
+            tmp = self.game_random_state.get_state()
+            self.game_random_state.set_state(old_seed)
+            return score,win
+        else:
+            raise ValueError("A game must be played before attempting to replay it!")
+
 
 
 def StochasticSamplingWithoutReplacement(population_scores_in,number_to_keep):
@@ -244,7 +258,7 @@ class GeneticLearner:
         self.survival_rate = 0.5 #what percentage of population to keep
         self.mutation_rate = 0.001 #
         self.crossover_rate = 0.7 #
-        self.best_always_survives = False
+        self.best_always_survives = True
 
         #other initialization
         self.n_to_keep = int(self.n_agents * self.survival_rate)
@@ -265,6 +279,13 @@ class GeneticLearner:
 
     def population_fitness_test(self):
         self.agent_scores = [self.agents[i].play_game() for i in range(self.n_agents)]
+
+    def population_fitness_test_multithread(self):
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            futures = [ executor.submit(self.agents[i].play_game) for i in range(self.n_agents)]
+            concurrent.futures.wait(futures)
+            self.agent_scores = [f.result() for f in futures]
+
 
     def select_survivors(self):
         scores = np.array([self.agent_scores[i][0] for i in range(self.n_agents)])
@@ -303,17 +324,36 @@ class GeneticLearner:
             self.agents[i].mutate_genome(self.mutation_rate)
 
     def get_current_generation_statistics(self):
-        scores = np.array([self.agent_scores[i][0] for i in range(self.n_agents)])
+        scores = self.get_score_array()
         return np.max(scores), np.median(scores), np.min(scores)
 
     def run_n_generations(self,n):
         for i in range(n):
             self.run_one_generation()
-            max, med, min = G.get_current_generation_statistics()
+            max, med, min = self.get_current_generation_statistics()
             s = "Generation " + str(i) + " - max: " + str(max) + "  median: " + str(med) + " min: " + str(min)
             print(s)
 
+    def get_score_array(self):
+        return np.array([self.agent_scores[i][0] for i in range(self.n_agents)])
 
+    def get_best_agent(self):
+        scores = self.get_score_array()
+        best_idx = np.argmax(scores)
+        return self.agents[best_idx]
+
+
+def save_model_state(model, fname):
+    pickle.dump(model, open(fname, "wb"))
+
+def load_model_state(fname):
+    return pickle.load(open(fname, "rb"))
+
+
+#TODO
+#Useful GUI
+#consider testing on multiple rounds of the game
+#optimization
 
 
 if __name__ == "__main__":
@@ -323,9 +363,52 @@ if __name__ == "__main__":
     #A.mutate_genome(0.7)
     #print(A.play_game())
 
-    G = GeneticLearner(1000,[16,8,4],seed=4)
-    #G.run_one_generation()
-    G.run_n_generations(1000)
+    # fname = 'model_20180122_'
+    # n_agents = 1500
+    # generations_per_batch = 50
+    # n_batches = 100
+    # total_generations = generations_per_batch*n_batches
+    # print('Preparing to run ' + str(total_generations) +' generations...')
+    #
+    # G = GeneticLearner(n_agents,[16,8,4],seed=4)
+    # #G.run_n_generations(5)
+    # #print(G.agent_scores)
+    #
+    # for i in range(n_batches):
+    #     print("Starting batch "+str(i))
+    #     G.run_n_generations(generations_per_batch)
+    #     gen_num = i*generations_per_batch
+    #     save_model_state(G,fname + str(gen_num) + '.p')
+    #     print("Model " + str(gen_num) + " Saved")
+
+    fname = 'model_20180122_200'
+    G = load_model_state(fname + '.p')
+    A = G.get_best_agent()
+    root = tk.Tk()
+    root.title("2048 Game")
+    A.replay_previous_game(root)
+    time.sleep(0.5)
+    A.play_game(root)
+    time.sleep(0.5)
+    A.play_game(root)
+    time.sleep(0.5)
+    A.play_game(root)
+    time.sleep(0.5)
+    input("Press Enter to end...")
+
+    #print(A.genome.dna)
+    #print(np.any(np.abs(A.genome.dna) > 1))
+    # dna_vals_greater_than_one = 0
+    # for a in G.agents:
+    #     if np.any(np.abs(a.genome.dna) > 0.99):
+    #         dna_vals_greater_than_one += 1
+    #         print(dna_vals_greater_than_one)
+
+
+
+
+
+
 
     #G.population_fitness_test()
     #print(G.agent_scores)

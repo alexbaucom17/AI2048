@@ -11,12 +11,14 @@ SUM_SCORE_SCALE = 1
 
 class game2048:
 
-    def __init__(self, n):
+    def __init__(self, n, random_stream=np.random.RandomState()):
         #create a new game and initialize two tiles
         self.n = n
         self.game_state = np.zeros([n, n])
+        self.random_stream = random_stream
         self.generate_tile()
         self.generate_tile()
+
 
     def get_tile(self, row, col):
         return self.game_state[row][col]
@@ -28,8 +30,8 @@ class game2048:
 
     def generate_tile(self):
         # randomly choose empty slot and value for new tile
-        tile_idx = np.random.choice(self.get_empty_idx(), 1)
-        if np.random.random() < TWO_FREQ:
+        tile_idx = self.random_stream.choice(self.get_empty_idx(), 1)
+        if self.random_stream.random_sample() < TWO_FREQ:
             tile_val = 2
         else:
             tile_val = 4
@@ -141,7 +143,8 @@ class game2048:
         # 0 = blocked, 1 = free, 2 = combine
 
         moved_idx = idx+vec
-        if np.any(moved_idx < 0) or np.any(moved_idx >= self.n):
+        #if np.any(moved_idx < 0) or np.any(moved_idx >= self.n):
+        if np.any(np.logical_or(moved_idx < 0, moved_idx >= self.n)):
             return 0  # blocked at edge
 
         adjacent_val = self.game_state[moved_idx[0], moved_idx[1]]

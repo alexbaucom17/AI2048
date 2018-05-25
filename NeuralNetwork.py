@@ -2,11 +2,14 @@ import math
 import numpy as np
 import copy
 
+CLIP_LIM = 300
+
 def sigmoid_fn(x):
     return 1.0 / (1.0 + math.exp(-x))
 
 def tanh_fn(x):
     return 2*sigmoid_fn(2*x) - 1
+
 
 class Neuron:
 
@@ -16,12 +19,17 @@ class Neuron:
         self.fwd_sum = 0
 
     def forward(self, inputs):
-        self.fwd_sum = np.sum(self.weights * inputs) + self.bias
+        self.fwd_sum = np.clip(np.sum(self.weights * inputs) + self.bias, -CLIP_LIM, CLIP_LIM)
         return self.activation_fn()
 
     def activation_fn(self):
         #return sigmoid_fn(self.fwd_sum)
-        return tanh_fn(self.fwd_sum)
+        try:
+            return tanh_fn(self.fwd_sum)
+        except:
+            print(self.fwd_sum)
+            raise ValueError("Math Error")
+
 
 
 class Layer:
@@ -37,6 +45,8 @@ class Layer:
             self.n_inputs = self.n_neurons
         else:
             self.n_inputs = weights.shape[1]
+        weights = np.clip(weights,-10, 10)
+        bias = np.clip(bias, -10, 10)
         self.neurons = [Neuron(weights[i,:],bias[i]) for i in range(self.n_neurons)]
 
     def evaluate(self, inputs):
@@ -110,7 +120,10 @@ class NetworkStructure:
 
 
 if __name__ == "__main__":
-    X1 = np.array([[1],
+    n = Neuron(np.array([-100, -100]), -100000)
+    print(n.forward(np.array([25600000, 25600000])))
+
+    """X1 = np.array([[1],
                   [4],
                   [2],
                   [-4]])
@@ -120,4 +133,5 @@ if __name__ == "__main__":
     b2 = np.array([1,1])
     N = Network([X1,X2],[b1,b2])
     I = np.array([1,0.3,-1,3])
-    print(N.evaluate(I))
+    print(N.evaluate(I))"""
+
