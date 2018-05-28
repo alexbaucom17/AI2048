@@ -5,15 +5,15 @@ import game2048_gui
 
 
 #MODE = 'Train'
-MODE = 'Train_continue'
-#MODE = 'Test'
+#MODE = 'Train_continue'
+MODE = 'Test'
 
 if MODE == 'Train':
     #parameters
-    fname = 'model_20180122_'
-    n_agents = 1500
-    generations_per_batch = 50
-    n_batches = 100
+    fname = 'CurrentModles/model_20180528_'
+    n_agents = 1000
+    generations_per_batch = 1
+    n_batches = 10
     total_generations = generations_per_batch*n_batches
     print('Preparing to run ' + str(total_generations) +' generations...')
 
@@ -30,8 +30,8 @@ if MODE == 'Train':
 
 if MODE == 'Train_continue':
     #define training parameters
-    fname = 'model_20180122_'
-    gen_to_load = 200
+    fname = 'CurrentModles/model_20180122_'
+    gen_to_load = 1000
     generations_per_batch = 25
     n_batches = 100
     total_generations = generations_per_batch * n_batches
@@ -54,7 +54,8 @@ if MODE == 'Train_continue':
 
 if MODE == 'Test':
     #Load model and best agent
-    fname = 'model_20180122_200'
+    fname = 'CurrentModles/model_20180122_1000'
+    n_new_games = 2
     G = load_model_state(fname + '.p')
     A = G.get_best_agent()
 
@@ -68,7 +69,7 @@ if MODE == 'Test':
     time.sleep(0.5)
 
     #Play 3 new games to see how the agent performs
-    for i in range(3):
+    for i in range(n_new_games):
         score, win = A.play_game(root)
         print('Agent score: ' + str(score) + ' Win status: ' + str(win))
         time.sleep(0.5)

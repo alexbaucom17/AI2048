@@ -9,7 +9,7 @@ import pickle
 import concurrent.futures
 
 SCALE = 1 #this allows dna values to randomly initialize in range [-1 1]
-MOVE_PAUSE_TIME = 0.1 #seconds to pause in between moves during replay
+MOVE_PAUSE_TIME = 0.15 #seconds to pause in between moves during replay
 
 
 def genome_crossover(genome1, genome2):
@@ -341,6 +341,17 @@ class GeneticLearner:
         scores = self.get_score_array()
         best_idx = np.argmax(scores)
         return self.agents[best_idx]
+
+    def get_worst_agent(self):
+        scores = self.get_score_array()
+        worst_idx = np.argmin(scores)
+        return self.agents[worst_idx]
+
+    def get_median_agent(self):
+        scores = self.get_score_array()
+        med_val = np.median(scores)
+        med_idx = np.argmax(scores == med_val) #returns only first value where scores == med_val
+        return self.agents[med_idx]
 
 
 def save_model_state(model, fname):
